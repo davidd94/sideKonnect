@@ -1,0 +1,88 @@
+@import 'bootstrap/bootstrap-grid';
+
+
+$font-primary: 'Nunito Sans',Arial, sans-serif;
+
+$white: #fff;
+$black: #000000;
+$darken: #232931;
+$blue: #3396ff;
+
+$primary: #78C2AD;
+$secondary: #a0f669;
+
+
+
+
+/* Bootstrap Toggle v2.2.2 corrections for Bootsrtap 4*/
+
+
+
+
+@mixin border-radius($radius) {
+  -webkit-border-radius: $radius;
+     -moz-border-radius: $radius;
+      -ms-border-radius: $radius;
+          border-radius: $radius;
+}
+
+@mixin transition($transition) {
+    -moz-transition:    all $transition ease;
+    -o-transition:      all $transition ease;
+    -webkit-transition: all $transition ease;
+    -ms-transition: 		all $transition ease;
+    transition:         all $transition ease;
+}
+
+@mixin gradient-background(){
+	background: rgba(159,246,105,1);
+	background: -moz-linear-gradient(-45deg, rgba(159,246,105,1) 0%, rgba(49,222,121,1) 100%);
+	background: -webkit-gradient(left top, right bottom, color-stop(0%, rgba(159,246,105,1)), color-stop(100%, rgba(49,222,121,1)));
+	background: -webkit-linear-gradient(-45deg, rgba(159,246,105,1) 0%, rgba(49,222,121,1) 100%);
+	background: -o-linear-gradient(-45deg, rgba(159,246,105,1) 0%, rgba(49,222,121,1) 100%);
+	background: -ms-linear-gradient(-45deg, rgba(159,246,105,1) 0%, rgba(49,222,121,1) 100%);
+	background: linear-gradient(135deg, rgba(159,246,105,1) 0%, rgba(49,222,121,1) 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#9ff669', endColorstr='#31de79', GradientType=1 );
+}
+
+@mixin peril-background() {
+	background: linear-gradient(to right top, #d6d6d6, #cccbd6, #bfc0d7, #b1b6d8, #a0add9, #98b1df, #8eb6e3, #84bae7, #8acbed, #97dbf1, #aaeaf5, #c0f9f9);
+}
+
+@mixin space-background() {
+	background: linear-gradient(to right top, #555454, #594b4e, #59424e, #543b53, #46365b, #35365c, #21365b, #003658, #00354b, #0f323e, #1c2f32, #252a2a);
+}
+
+@mixin prefixed($property, $value) {
+
+	-webkit-#{$property}: #{$value};
+	-moz-#{$property}: #{$value};
+	-ms-#{$property}: #{$value};
+	-o-#{$property}: #{$value};
+	#{$property}: #{$value};
+
+}
+
+// prefix keyframes
+@mixin keyframes($name) {
+
+	@-webkit-keyframes #{$name} {
+	  @content;
+	 }
+
+	@-moz-keyframes #{$name} {
+	  @content;
+	}
+
+	@-ms-keyframes #{$name} {
+	  @content;
+	}
+
+	@-o-keyframes #{$name} {
+	  @content;
+	}
+
+	@keyframes #{$name} {
+	@content;
+  }
+}
