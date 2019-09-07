@@ -1,29 +1,66 @@
 const models = require('../models');
-var express = require('express');
-var app = express();
-
+const bcrypt = require('bcrypt');
 var path = require('path');
+
 
 exports.get_landing = (req, res, next) => {
     console.log('rendering index html');
     res.sendFile(path.join(__dirname, "../src/index.html"));
-}
+};
 
 exports.submit_user = (req, res, next) => {
-    console.log("first name: ", req.body.firstname);
-    console.log("last name: ", req.body.lastname);
-    console.log("password: ", req.body.password);
-    console.log("email:", req.body.email);
-    /*
-    return models.users.create({
-        first_name: req.body.first_name,
-        last_name: req.body.last_name,
-        password: req.body.password,
-        email: req.body.email
+    let firstName = req.body.firstname;
+    let lastName = req.body.lastname;
+    let userEmail = req.body.email;
+    let password = req.body.password;
+    
+    models.users.findOne({
+        where : {
+            email : userEmail
+        }
     }).then(user => {
-        res.redirect('/');
+        if (user === null) {
+            bcrypt.hash(password, 10, (err, hash) => {
+                models.users.create({
+                    first_name: firstName,
+                    last_name: lastName,
+                    password: hash,
+                    email: userEmail
+                }).then(user => {
+                    res.json({'results': 'User Created Successfully'});
+                });
+            });
+        } else if (user !== null) {
+            res.json({'results': 'That email already exists. Please try another one.'});
+        } else {
+            res.json({'results': 'An error has occurred while creating an account. Please send us an email.'});
+        };
     });
-    */
-   
-   res.json({'results': 'submitted'});
-}
+};
+
+exports.login_user = (req, res, next) => {
+    let userEmail = req.body.email;
+    let password = req.body.password;
+    console.log("email:", userEmail);
+    console.log("password: ", password);
+    
+    models.users.findOne({
+        where : {
+            email : userEmail
+        }
+    }).then(user => {
+        if (user === null) {
+            res.json({'results': 'Invalid User/Password combination!'});
+        } else if (user !== null) {
+            bcrypt.compare(password, user.password, (err, response) => {
+                if (response) {
+                    res.json({'results': 'Success'});
+                } else {
+                    res.json({'results': 'Failed'});
+                };
+            });
+        } else {
+            res.json({'results': 'Login error has occurred. Please contact us immediately.'});
+        };
+    });
+};

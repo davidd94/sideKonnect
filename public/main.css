@@ -2745,11 +2745,18 @@ html {
       color: #ffffff; }
   ._3tARxS1P09M1PzQTi2rdul ._11BWjXsQdQ7pD2Tt-e95Lh {
     position: relative; }
+    ._3tARxS1P09M1PzQTi2rdul ._11BWjXsQdQ7pD2Tt-e95Lh .JpBZNcfygX-3yCU8s3uK8 {
+      text-align: center;
+      width: 100%;
+      color: #1ab188;
+      font-weight: 600;
+      transition: 800ms all ease;
+      margin-bottom: 30px; }
     ._3tARxS1P09M1PzQTi2rdul ._11BWjXsQdQ7pD2Tt-e95Lh h1 {
       text-align: center;
       color: #ffffff;
       font-weight: 300;
-      margin: 0 0 40px; }
+      margin: 0 0 20px; }
     ._3tARxS1P09M1PzQTi2rdul ._11BWjXsQdQ7pD2Tt-e95Lh label {
       position: absolute;
       transform: translateY(6px);

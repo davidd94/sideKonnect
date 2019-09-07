@@ -8,6 +8,7 @@ import '../node_modules/react-perfect-scrollbar/dist/css/styles.css';
 import '../public/main.css';
 
 import HomepageIndex from './components/homepage/homeindex';
+import DashboardContainer from './components/dashboard/dashboard-container';
 import store from './store';
 
 
@@ -16,6 +17,7 @@ const index = (
         <Router>
             <Switch>
                 <Route exact path='/' component={HomepageIndex} />
+                <Route exact path='/dashboard' component={DashboardContainer} />
             </Switch>
         </Router>
     </Provider>
