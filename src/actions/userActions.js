@@ -32,5 +32,12 @@ const setUserEmail = (email) => {
     }
 };
 
+const setUserToken = (token) => {
+    return {
+        type: 'SET_TOKEN',
+        payload: token
+    }
+};
 
-export { fetchUser, setUserFirstname, setUserLastname, setUserEmail };
+
+export { fetchUser, setUserFirstname, setUserLastname, setUserEmail, setUserToken };

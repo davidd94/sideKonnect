@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { useSelector } from 'react-redux';
-import { NavLink } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { NavLink, Redirect } from 'react-router-dom';
 
 import styles from '../_styles/homepageStyles.module.scss';
+import { setUserFirstname, setUserToken } from '../../../actions/userActions';
 
 
 const LoginForm = () => {
@@ -26,9 +27,7 @@ const LoginForm = () => {
     const loginEmailRef = useRef();
     const loginPassRef = useRef();
 
-    const userName = useSelector(state => (state.user.user));
-
-    //console.log(userName);
+    const dispatch = useDispatch();
 
     const handleLabelStyles = (inputType) => {
         if (inputType === 'firstname') {
@@ -147,91 +146,120 @@ const LoginForm = () => {
             body: JSON.stringify(data)
         })
         .then(res => res.json().then(response => {
-            console.log(response.results);
             if (response.results === 'Success') {
+                dispatch(setUserFirstname(response.first_name));
+                dispatch(setUserToken(response.access_token));
+
+                localStorage.setItem('token', response.access_token);
+                localStorage.setItem('firstname', response.first_name);
+
                 setLoginStatus(response.results);
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 5000);
             } else {
                 setLoginStatus(response.results);
             };
         }));
     };
+
+    const verifyToken = () => {
+        let data = {'token': localStorage.getItem('token')};
+        
+        fetch('/verifytoken', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json().then(response => {
+            console.log(response);
+        }));
+    };
     
-    return (
-        <div className={styles.formContainer}>
-            <ul className={styles.tabGroup}>
-                <li className={tab === 'signup' ? styles.active : ''} onClick={() => setTab('signup')}><a>Sign Up</a></li>
-                <li className={tab === 'login' ? styles.active : ''} onClick={() => {setTab('login'); setSignupStatus('');}}><a>Log In</a></li>
-            </ul>
 
-            <div className={styles.tabContent}>
-                <div className={tab === 'signup' ? ([styles.signup, styles.tabActive, 'wow fadeIn']).join(' ') : ([styles.signup, 'wow fadeOut']).join(' ')}>
-                    <h1>Sign Up For Free</h1>
-                    <NavLink to='/dashboard'>TO DASHBOARD</NavLink>
-                    <p className={styles.loginAlerts}>{signupStatus}</p>
-                    <div className={styles.topRow}>
-                        <div className={styles.fieldWrap}>
-                            <label className={handleLabelStyles('firstname')}>
-                                First Name<span className={styles.req}>*</span>
-                            </label>
-                            <input ref={FNref} name="firstname" type="text" required autoComplete="off" onChange={(e) => {setFirstname(e.currentTarget.value)}} onFocus={() => setInputfocus('firstname')} onBlur={() => setInputfocus('')} />
+    if (loginStatus === 'Success') {
+        return <Redirect to='/dashboard' />
+    } else {
+        return (
+            <div className={styles.formContainer}>
+                <ul className={styles.tabGroup}>
+                    <li className={tab === 'signup' ? styles.active : ''} onClick={() => setTab('signup')}><a>Sign Up</a></li>
+                    <li className={tab === 'login' ? styles.active : ''} onClick={() => {setTab('login'); setSignupStatus('');}}><a>Log In</a></li>
+                </ul>
+
+                <div className={styles.tabContent}>
+                    <div className={tab === 'signup' ? ([styles.signup, styles.tabActive, 'wow fadeIn']).join(' ') : ([styles.signup, 'wow fadeOut']).join(' ')}>
+                        <h1>Sign Up For Free</h1>
+                        <NavLink to='/dashboard'>TO DASHBOARD</NavLink>
+                        <span onClick={verifyToken}>VERIFY TOKEN</span>
+                        <p className={styles.loginAlerts}>{signupStatus}</p>
+                        <div className={styles.topRow}>
+                            <div className={styles.fieldWrap}>
+                                <label className={handleLabelStyles('firstname')}>
+                                    First Name<span className={styles.req}>*</span>
+                                </label>
+                                <input ref={FNref} name="firstname" type="text" required autoComplete="off" onChange={(e) => {setFirstname(e.currentTarget.value)}} onFocus={() => setInputfocus('firstname')} onBlur={() => setInputfocus('')} />
+                            </div>
+
+                            <div className={styles.fieldWrap}>
+                                <label className={handleLabelStyles('lastname')}>
+                                    Last Name<span className={styles.req}>*</span>
+                                </label>
+                                <input ref={LNref} name="lastname" type="text" required autoComplete="off" onChange={(e) => {setLastname(e.currentTarget.value)}} onFocus={() => setInputfocus('lastname')} onBlur={() => setInputfocus('')} />
+                            </div>
+
+                            <div className={([styles.fieldWrap, styles.inputW100]).join(' ')}>
+                                <label className={handleLabelStyles('email')}>
+                                    Email Address<span className={styles.req}>*</span>
+                                </label>
+                                <input ref={Eref} name="email" type="text" required autoComplete="off" onChange={(e) => {setEmail(e.currentTarget.value)}} onFocus={() => setInputfocus('email')} onBlur={() => setInputfocus('')} />
+                            </div>
+
+                            <div className={([styles.fieldWrap, styles.inputW100]).join(' ')}>
+                                <label className={handleLabelStyles('password')}>
+                                    Set A Password<span className={styles.req}>*</span>
+                                </label>
+                                <input ref={Pref} name="password" type="password" required autoComplete="off" onChange={(e) => {setPassword(e.currentTarget.value)}} onFocus={() => setInputfocus('password')} onBlur={() => setInputfocus('')} />
+                            </div>
+
+                            <button type="submit" className={([styles.button, styles.buttonBlock]).join(' ')} onClick={handleRegistration}>Get Started</button>
                         </div>
-
-                        <div className={styles.fieldWrap}>
-                            <label className={handleLabelStyles('lastname')}>
-                                Last Name<span className={styles.req}>*</span>
-                            </label>
-                            <input ref={LNref} name="lastname" type="text" required autoComplete="off" onChange={(e) => {setLastname(e.currentTarget.value)}} onFocus={() => setInputfocus('lastname')} onBlur={() => setInputfocus('')} />
-                        </div>
-
-                        <div className={([styles.fieldWrap, styles.inputW100]).join(' ')}>
-                            <label className={handleLabelStyles('email')}>
-                                Email Address<span className={styles.req}>*</span>
-                            </label>
-                            <input ref={Eref} name="email" type="text" required autoComplete="off" onChange={(e) => {setEmail(e.currentTarget.value)}} onFocus={() => setInputfocus('email')} onBlur={() => setInputfocus('')} />
-                        </div>
-
-                        <div className={([styles.fieldWrap, styles.inputW100]).join(' ')}>
-                            <label className={handleLabelStyles('password')}>
-                                Set A Password<span className={styles.req}>*</span>
-                            </label>
-                            <input ref={Pref} name="password" type="password" required autoComplete="off" onChange={(e) => {setPassword(e.currentTarget.value)}} onFocus={() => setInputfocus('password')} onBlur={() => setInputfocus('')} />
-                        </div>
-
-                        <button type="submit" className={([styles.button, styles.buttonBlock]).join(' ')} onClick={handleRegistration}>Get Started</button>
+                        
                     </div>
                     
-                </div>
-                
-                <div className={tab === 'login' ? ([styles.login, styles.tabActive, 'wow fadeIn']).join(' ') : styles.login}>
-                    <h1 className={styles.loginHeader}>Welcome Back !</h1>
-                    <p className={styles.loginAlerts}>{loginStatus}</p>
-                    <div className={styles.topRow}>
-                        <div className={([styles.fieldWrap, styles.inputW100]).join(' ')}>
-                            <label className={handleLabelStyles('loginEmail')}>
-                                Email Address<span className={styles.req}>*</span>
-                            </label>
-                            <input ref={loginEmailRef} type="text" required autoComplete="off" onChange={(e) => {setLoginEmail(e.currentTarget.value)}} onFocus={() => setInputfocus('loginEmail')} onBlur={() => setInputfocus('')} />
+                    <div className={tab === 'login' ? ([styles.login, styles.tabActive, 'wow fadeIn']).join(' ') : styles.login}>
+                        <h1 className={styles.loginHeader}>Welcome Back !</h1>
+                        <p className={styles.loginAlerts}>{loginStatus}</p>
+                        <div className={styles.topRow}>
+                            <div className={([styles.fieldWrap, styles.inputW100]).join(' ')}>
+                                <label className={handleLabelStyles('loginEmail')}>
+                                    Email Address<span className={styles.req}>*</span>
+                                </label>
+                                <input ref={loginEmailRef} type="text" required autoComplete="off" onChange={(e) => {setLoginEmail(e.currentTarget.value)}} onFocus={() => setInputfocus('loginEmail')} onBlur={() => setInputfocus('')} />
+                            </div>
+
+                            <div className={([styles.fieldWrap, styles.inputW100]).join(' ')}>
+                                <label className={handleLabelStyles('loginPass')}>
+                                    Password<span className={styles.req}>*</span>
+                                </label>
+                                <input ref={loginPassRef} type="password" required autoComplete="off"
+                                                onChange={(e) => {setLoginPass(e.currentTarget.value)}}
+                                                onFocus={() => setInputfocus('loginPass')}
+                                                onBlur={() => setInputfocus('')}
+                                                onKeyUp={(e) => {if (e.which === 13) {handleLogin()}}} />
+                            </div>
+
+                            <p className={styles.forgot}><a href="">Forgot Password ?</a></p>
+
+                            <button type="submit" className={([styles.button, styles.buttonBlock]).join(' ')} onClick={handleLogin}>Log In</button>
+                            
                         </div>
-
-                        <div className={([styles.fieldWrap, styles.inputW100]).join(' ')}>
-                            <label className={handleLabelStyles('loginPass')}>
-                                Password<span className={styles.req}>*</span>
-                            </label>
-                            <input ref={loginPassRef} type="password" required autoComplete="off" onChange={(e) => {setLoginPass(e.currentTarget.value)}} onFocus={() => setInputfocus('loginPass')} onBlur={() => setInputfocus('')} />
-                        </div>
-
-                        <p className={styles.forgot}><a href="">Forgot Password ?</a></p>
-
-                        <button type="submit" className={([styles.button, styles.buttonBlock]).join(' ')} onClick={handleLogin}>Log In</button>
-                        
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 };
 
 

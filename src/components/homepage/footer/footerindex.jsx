@@ -26,7 +26,7 @@ const FooterIndex = () => {
                                 <li className={([styles.chart, styles.chartPlus]).join(' ')}></li>
                                 <li className={([styles.chart, styles.chartVoice]).join(' ')}><span>Voice</span></li>
                                 <li className={([styles.chart, styles.chartPlus]).join(' ')}></li>
-                                <li className={([styles.chart, styles.chartHD]).join(' ')} style={{backgroundSize: '80px'}}><span>HD</span></li>
+                                <li className={([styles.chart, styles.chartHD]).join(' ')} style={{backgroundSize: '80px'}}><span style={{color: '#616161', fontWeight: 600}}>HD</span></li>
                             </ul>
                         </Col>
                     </Row>

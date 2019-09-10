@@ -1,5 +1,6 @@
 const models = require('../models');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 var path = require('path');
 
 
@@ -27,13 +28,13 @@ exports.submit_user = (req, res, next) => {
                     password: hash,
                     email: userEmail
                 }).then(user => {
-                    res.json({'results': 'User Created Successfully'});
+                    res.send({'results': 'User Created Successfully'});
                 });
             });
         } else if (user !== null) {
-            res.json({'results': 'That email already exists. Please try another one.'});
+            res.send({'results': 'That email already exists. Please try another one.'});
         } else {
-            res.json({'results': 'An error has occurred while creating an account. Please send us an email.'});
+            res.send({'results': 'An error has occurred while creating an account. Please send us an email.'});
         };
     });
 };
@@ -41,8 +42,6 @@ exports.submit_user = (req, res, next) => {
 exports.login_user = (req, res, next) => {
     let userEmail = req.body.email;
     let password = req.body.password;
-    console.log("email:", userEmail);
-    console.log("password: ", password);
     
     models.users.findOne({
         where : {
@@ -50,17 +49,40 @@ exports.login_user = (req, res, next) => {
         }
     }).then(user => {
         if (user === null) {
-            res.json({'results': 'Invalid User/Password combination!'});
+            res.send({'results': 'Invalid User/Password combination!'});
         } else if (user !== null) {
             bcrypt.compare(password, user.password, (err, response) => {
                 if (response) {
-                    res.json({'results': 'Success'});
+                    const expirationTimer = 5 * 60 * 30;
+                    const secretKey = process.env.SECRET_KEY;
+                    const accessToken = jwt.sign({ firstname : user.first_name, email: user.email }, secretKey, { expiresIn : expirationTimer });
+                    
+                    models.users.update({'token': accessToken}, {
+                        where : {
+                            email : userEmail
+                        }
+                    }).then(updated => {
+
+                        res.send({'results': 'Success', 'first_name': user.first_name, 'access_token': accessToken }); 
+                    });
                 } else {
-                    res.json({'results': 'Failed'});
+                    res.send({'results': 'Failed'});
                 };
             });
         } else {
-            res.json({'results': 'Login error has occurred. Please contact us immediately.'});
+            res.send({'results': 'Login error has occurred. Please contact us immediately.'});
         };
     });
+};
+
+exports.verify_token = (req, res, next) => {
+    let token = req.body.token;
+    const secretKey = process.env.SECRET_KEY;
+
+    try {
+        jwt.verify(token, secretKey);
+        res.send({'response': 'valid token!'});
+    } catch (err) {
+        res.send({'response': 'invalid token!!'});
+    };
 };
