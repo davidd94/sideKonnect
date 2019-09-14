@@ -9,7 +9,7 @@ const FooterIndex = () => {
     return (
         <footer className={styles.footerSection}>
             <div className={styles.footerWidget}>
-                <Container>
+                <Container fluid style={{padding: '0 50px'}}>
                     <Row className={styles.footerInnerWidget}>
                         <Col sm={5} lg={4}>
                             <aside className={styles.fwidget}>
@@ -21,13 +21,13 @@ const FooterIndex = () => {
                         <Col sm={6} lg={7} className={styles.footerIcons}>
                             <h5>Core Features</h5>
                             <p>Build rich and meaningful experiences through the combination of:</p>
-                            <ul className={styles.featuresChart}>
-                                <li className={([styles.chart, styles.chartVideo]).join(' ')}><span>Video</span></li>
-                                <li className={([styles.chart, styles.chartPlus]).join(' ')}></li>
-                                <li className={([styles.chart, styles.chartVoice]).join(' ')}><span>Voice</span></li>
-                                <li className={([styles.chart, styles.chartPlus]).join(' ')}></li>
-                                <li className={([styles.chart, styles.chartHD]).join(' ')} style={{backgroundSize: '80px'}}><span style={{color: '#616161', fontWeight: 600}}>HD</span></li>
-                            </ul>
+                            <Row className={styles.featuresChart}>
+                                <Col md={12} lg={3} className={styles.chart}><img src="./images/video.png" alt="" style={{top: '10%'}}/><p>Video</p></Col>
+                                <Col md={12} lg={1} className={styles.iconplus} style={{padding: '0 20px'}}><img src="./images/plus.png" alt="" /></Col>
+                                <Col md={12} lg={3} className={styles.chart}><img src="./images/voice.png" alt="" /><p>Voice</p></Col>
+                                <Col md={12} lg={1} className={styles.iconplus} style={{padding: '0 20px'}}><img src="./images/plus.png" alt="" /></Col>
+                                <Col md={12} lg={3} className={styles.chart}><img src="./images/hd.jpg" alt="" style={{width: '80px'}} /><p style={{color: '#616161', fontWeight: 600}}>HD</p></Col>
+                            </Row>
                         </Col>
                     </Row>
                 </Container>
@@ -41,8 +41,8 @@ const FooterIndex = () => {
                         <ul>
                             <li><a href=""><i className="fab fa-facebook-square"/></a></li>
                             <li><a href=""><i className="fab fa-twitter-square"/></a></li>
-                            <li><a href=""><i className="fab fa-linkedin"/></a></li>
-                            <li><a href=""><i className="fab fa-github-square"/></a></li>
+                            <li><a href="https://www.linkedin.com/in/duong-david-3b451aa2/"><i className="fab fa-linkedin"/></a></li>
+                            <li><a href="https://github.com/davidd94/sideKonnect"><i className="fab fa-github-square"/></a></li>
                         </ul>
                     </div>
                 </Container>

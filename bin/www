@@ -8,6 +8,8 @@ var app = require('../app');
 var debug = require('debug')('sidekonnect:server');
 var http = require('http');
 let models = require('../models');
+const jwt = require('jsonwebtoken');
+const base64url = require('base64url');
 
 /**
  * Get port from environment and store in Express.
@@ -23,6 +25,117 @@ app.set('port', port);
 var server = http.createServer(app);
 
 /**
+ * Adding socketio middleware and Setting up socketio namespace "connection" for new sockets
+ */
+
+var io = require('socket.io')(server);
+
+io.on('connection', (socket) => {
+  console.log('A user as connected !');
+  console.log(socket.handshake.query['token']);
+  const currentUserToken = socket.handshake.query['token'];
+  const secretKey = process.env.SECRET_KEY;
+
+  if (currentUserToken) {
+    try {
+      let currentUserInfo = jwt.verify(currentUserToken, secretKey);
+      let newFriendInfo = [];
+
+      models.buddy.findAll({
+        where : {
+          userId: currentUserInfo.id
+        },
+        raw: true,
+      }).map(user => {
+        let friend = {
+            'firstname': user.first_name,
+            'lastname': user.last_name,
+            'id': user.friend_id,
+            'picture': user.picture,
+            'email': user.email
+        };
+        newFriendInfo.push(friend);
+      }).then(() => {
+        io.emit('friendslist', newFriendInfo);
+      });
+    } catch (err) {
+      io.emit('friendslist', 'Unable to retreive friends list');
+    };
+  };
+
+  socket.on('join_room', (data) => {
+    console.log('TRYING TO JOIN A ROOM!!!!!!!!!!!!', data);
+
+    let receiverID = parseInt(data.receiver);
+
+    try {
+      let callerID = parseInt((jwt.verify(currentUserToken, secretKey)).id);
+      let roomID = callerID > receiverID ? (receiverID + '-' + callerID) : (callerID + '-' + receiverID);
+
+      let secretRoomEncoded = base64url(currentUserToken);
+      let tokboxRoom = "https://tokbox.com/embed/embed/ot-embed.js?embedId=853df113-5f97-4ed9-9d0d-06ccae7a92a2&room=" + secretRoomEncoded + "&iframe=true"
+      console.log(roomID, tokboxRoom);
+      io.emit('join_room', 'room id is... ' + roomID);
+    } catch (err) {
+      io.emit('join_room', 'You must be logged to make this call..');
+    };
+  });
+
+  socket.on('test', () => {
+    console.log('test run');
+    io.emit('test', 'testing !!!');
+  });
+
+  socket.on('adduser', (data) => {
+    try {
+      let currentUserInfo = jwt.verify(currentUserToken, secretKey);
+      // FIND CURRENT USER'S INFO
+      models.users.findOne({
+        where : {
+          email: currentUserInfo.email
+        }
+      }).then(currentUser => {
+        if (currentUser) {
+          console.log(currentUser.email);
+          // IF CURRENT USER FOUND, FIND THE REQUESTED FRIEND TO BE ADDED
+          models.users.findOne({
+            where : {
+              email: data
+            }
+          }).then(friend => {
+            console.log(friend.email);
+            // IF REQUESTED FRIEND FOUND, ADD IF IT'S NOT THE CURRENT USER'S SELF
+            if (friend && (friend.email !== currentUser.email)) {
+              currentUser.createBuddy({
+                friend_id: friend.id,
+                first_name: friend.first_name,
+                last_name: friend.last_name,
+                email: friend.email,
+                picture: friend.picture
+              }).then(response => {
+                io.emit('adduser', data + ' added !');
+              });
+            } else if (friend.email === currentUser.email) {
+              io.emit('adduser', 'You cannot add yourself !');
+            } else {
+              io.emit('adduser', 'Unable to find ' + data);
+            };
+          });
+        } else {
+          io.emit('adduser', 'Current user unauthorized...');
+        };
+      });
+    } catch (err) {
+      io.emit('adduser', 'Unauthorized...');
+    };
+  });
+
+  socket.on('disconnect', () => {
+    console.log('A user disconnected..........');
+  });
+});
+
+/**
  * Listen on provided port, on all network interfaces.
  */
 
@@ -30,6 +143,7 @@ return models.sequelize.sync().then(result => {
   server.listen(port);
   server.on('error', onError);
   server.on('listening', onListening);
+  console.log('Listening on port: ' + port);
 });
 
 /**

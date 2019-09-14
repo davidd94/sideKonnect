@@ -1,11 +1,12 @@
 
+
 module.exports = (sequelize, DataTypes) => {
-    var user = sequelize.define('users', {
+    var users = sequelize.define('users', {
         id: {
             allowNull: false,
             primaryKey: true,
-            type: DataTypes.UUID,
-            defaultValue: DataTypes.UUIDV4,
+            autoIncrement: true,
+            type: DataTypes.INTEGER,
         },
         first_name: {
             allowNull: false,
@@ -21,13 +22,24 @@ module.exports = (sequelize, DataTypes) => {
         },
         email: {
             allowNull: false,
-            type: DataTypes.STRING
+            type: DataTypes.STRING,
+            unique: true
+        },
+        picture: {
+            allowNull: true,
+            type: DataTypes.STRING(500)
         },
         token: {
             allowNull: true,
             type: DataTypes.STRING
         }
     });
+    
+    users.associate = (models) => {
+        // User hasMany FriendsList
 
-    return user;
+        users.hasMany(models.buddy);
+    };
+
+    return users;
 };

@@ -9,6 +9,7 @@
     "dev": "nodemon app"
   },
   "dependencies": {
+    "base64url": "^3.0.1",
     "bcrypt": "^3.0.6",
     "body-parser": "^1.19.0",
     "bootstrap": "^4.3.1",
@@ -30,6 +31,8 @@
     "redux": "^4.0.4",
     "redux-logger": "^3.0.6",
     "sequelize": "^5.18.1",
+    "socket.io": "^2.2.0",
+    "socket.io-client": "^2.2.0",
     "wow.js": "^1.2.2"
   },
   "devDependencies": {

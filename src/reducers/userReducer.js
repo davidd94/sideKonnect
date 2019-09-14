@@ -3,7 +3,7 @@
 const userReducer = (state={
     firstname: (localStorage.getItem('firstname') ? localStorage.getItem('firstname') : undefined),
     lastname: undefined,
-    email: undefined,
+    email: (localStorage.getItem('email') ? localStorage.getItem('email') : undefined),
     status: false,
     token: (localStorage.getItem('token') ? localStorage.getItem('token') : undefined),
     fetching: false,

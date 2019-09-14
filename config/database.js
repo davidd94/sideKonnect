@@ -2,7 +2,7 @@ module.exports = {
   "development": {
     "username": "postgres",
     "password": "mouse312",
-    "database": "sidekonnect",
+    "database": "sideKonnect",
     "host": "127.0.0.1",
     "dialect": "postgres",
     "operatorsAliases": false,

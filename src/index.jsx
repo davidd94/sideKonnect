@@ -23,7 +23,7 @@ const index = (
     </Provider>
 );
 
-const app = document.getElementById('container');
+const app = document.getElementById('root');
 
 ReactDOM.render(
     index, app

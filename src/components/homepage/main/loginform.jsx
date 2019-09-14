@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { NavLink, Redirect } from 'react-router-dom';
 
 import styles from '../_styles/homepageStyles.module.scss';
-import { setUserFirstname, setUserToken } from '../../../actions/userActions';
+import { setUserFirstname, setUserToken, setUserEmail } from '../../../actions/userActions';
 
 
 const LoginForm = () => {
@@ -20,7 +20,7 @@ const LoginForm = () => {
     const Eref = useRef();
     const Pref = useRef();
 
-    const [loginStatus, setLoginStatus] = useState('');
+    const [loginStatus, setLoginStatus] = useState(localStorage.getItem('token') ? 'Success' : '');
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPass, setLoginPass] = useState('');
 
@@ -148,12 +148,15 @@ const LoginForm = () => {
         .then(res => res.json().then(response => {
             if (response.results === 'Success') {
                 dispatch(setUserFirstname(response.first_name));
+                dispatch(setUserEmail(response.email));
                 dispatch(setUserToken(response.access_token));
 
-                localStorage.setItem('token', response.access_token);
                 localStorage.setItem('firstname', response.first_name);
+                localStorage.setItem('email', response.email);
+                localStorage.setItem('token', response.access_token);
 
-                setLoginStatus(response.results);
+                window.location.href = '/dashboard';
+                //setLoginStatus(response.results);
             } else {
                 setLoginStatus(response.results);
             };
@@ -189,7 +192,7 @@ const LoginForm = () => {
                 </ul>
 
                 <div className={styles.tabContent}>
-                    <div className={tab === 'signup' ? ([styles.signup, styles.tabActive, 'wow fadeIn']).join(' ') : ([styles.signup, 'wow fadeOut']).join(' ')}>
+                    <div className={tab === 'signup' ? ([styles.signup, styles.tabActive]).join(' ') : styles.signup}>
                         <h1>Sign Up For Free</h1>
                         <NavLink to='/dashboard'>TO DASHBOARD</NavLink>
                         <span onClick={verifyToken}>VERIFY TOKEN</span>
@@ -228,7 +231,7 @@ const LoginForm = () => {
                         
                     </div>
                     
-                    <div className={tab === 'login' ? ([styles.login, styles.tabActive, 'wow fadeIn']).join(' ') : styles.login}>
+                    <div className={tab === 'login' ? ([styles.login, styles.tabActive]).join(' ') : styles.login}>
                         <h1 className={styles.loginHeader}>Welcome Back !</h1>
                         <p className={styles.loginAlerts}>{loginStatus}</p>
                         <div className={styles.topRow}>

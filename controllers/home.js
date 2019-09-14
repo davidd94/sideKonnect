@@ -10,9 +10,9 @@ exports.get_landing = (req, res, next) => {
 };
 
 exports.submit_user = (req, res, next) => {
-    let firstName = req.body.firstname;
-    let lastName = req.body.lastname;
-    let userEmail = req.body.email;
+    let firstName = (req.body.firstname).toLowerCase();
+    let lastName = (req.body.lastname).toLowerCase();
+    let userEmail = (req.body.email).toLowerCase();
     let password = req.body.password;
     
     models.users.findOne({
@@ -27,7 +27,16 @@ exports.submit_user = (req, res, next) => {
                     last_name: lastName,
                     password: hash,
                     email: userEmail
-                }).then(user => {
+                }).then(newUser => {
+                    /*
+                    newUser.createBuddy({
+                        friend_id: 5,
+                        first_name: 'Allen',
+                        last_name: 'Hoe',
+                        email: 'allen2@gg.com',
+                        picture: 'www.mofo.com'
+                    }).then(() => console.log('ASSOCIATION TABLE WORKS !!!!!!'));
+                    */
                     res.send({'results': 'User Created Successfully'});
                 });
             });
@@ -40,7 +49,7 @@ exports.submit_user = (req, res, next) => {
 };
 
 exports.login_user = (req, res, next) => {
-    let userEmail = req.body.email;
+    let userEmail = (req.body.email).toLowerCase();
     let password = req.body.password;
     
     models.users.findOne({
@@ -53,9 +62,9 @@ exports.login_user = (req, res, next) => {
         } else if (user !== null) {
             bcrypt.compare(password, user.password, (err, response) => {
                 if (response) {
-                    const expirationTimer = 5 * 60 * 30;
+                    const expirationTimer = 3 * 60 * 60;
                     const secretKey = process.env.SECRET_KEY;
-                    const accessToken = jwt.sign({ firstname : user.first_name, email: user.email }, secretKey, { expiresIn : expirationTimer });
+                    const accessToken = jwt.sign({ id:user.id, firstname : user.first_name, email: user.email }, secretKey, { expiresIn : expirationTimer });
                     
                     models.users.update({'token': accessToken}, {
                         where : {
@@ -63,7 +72,7 @@ exports.login_user = (req, res, next) => {
                         }
                     }).then(updated => {
 
-                        res.send({'results': 'Success', 'first_name': user.first_name, 'access_token': accessToken }); 
+                        res.send({'results': 'Success', 'first_name': user.first_name, 'email': user.email, 'access_token': accessToken }); 
                     });
                 } else {
                     res.send({'results': 'Failed'});

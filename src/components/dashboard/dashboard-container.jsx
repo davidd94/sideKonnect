@@ -1,13 +1,29 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Redirect } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import socket from '../../socketio';
 
 import DashboardPresent from './dashboard-present';
 import { setUserFirstname, setUserToken, setUserEmail } from '../../actions/userActions';
 
+
 const DashboardContainer = () => {
     const userInfo = useSelector(state => (state.user));
     const dispatch = useDispatch();
+
+    const [videoStatus, setVideoStatus] = useState(false);
+    const [roomID, setRoomID] = useState(false);
+    const [friendslist, setFriendslist] = useState([
+        {'firstname': 'allen', 'lastname': 'kolakian', 'email': 'allen@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
+        {'firstname': 'david', 'lastname': 'duong', 'email': 'test@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
+        {'firstname': 'jin', 'lastname': 'kim', 'email': 'jin@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
+        {'firstname': 'will', 'lastname': 'lingamen', 'email': 'will@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
+        {'firstname': 'booki', 'lastname': 'Dalhmer', 'email': 'booki@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
+    ]);
+
+    socket.on('friendslist', (data) => {
+        setFriendslist(data);
+    });
 
     useEffect(() => {
         if (userInfo.token !== undefined) {
@@ -32,15 +48,32 @@ const DashboardContainer = () => {
                     };
                 });
             });
+        };
 
-            const script = document.createElement("script");
-            script.src = "https://tokbox.com/embed/embed/ot-embed.js?embedId=853df113-5f97-4ed9-9d0d-06ccae7a92a2&room=DEFAULT_ROOM";
-            //script.async = true;
+        socket.on('test', (data) => {
+            console.log(data);
+        });
+        
+        socket.on('join_room', (data) => {
+            console.log(data);
+        });
 
-            document.body.appendChild(script);
+        return () => {
+            socket.removeAllListeners();  
         };
     }, []);
-    console.log(userInfo);
+
+    const handleCall = (userID) => {
+        const data = {'receiver': userID};
+        setVideoStatus('Calling...');
+        console.log(data);
+        socket.emit('join_room', data);
+    };
+
+    const handleHangup = () => {
+        setVideoStatus(false);
+    };
+
     const handleLogout = () => {
         dispatch(setUserFirstname(undefined));
         dispatch(setUserToken(undefined));
@@ -51,7 +84,12 @@ const DashboardContainer = () => {
 
     if (userInfo.token !== undefined) {
         return <DashboardPresent
-                    handleLogout={handleLogout} />
+                    videoStatus={videoStatus}
+                    handleCall={handleCall}
+                    handleHangup={handleHangup}
+                    roomID={roomID}
+                    handleLogout={handleLogout}
+                        friendslist={friendslist} />
     } else {
         return <Redirect to='/' />
     };

@@ -34,10 +34,10 @@ const MainIndex = () => {
         <section className={styles.mainSection}>
             <Container fluid className={styles.mainContainer}>
                 <Row className={styles.mainRow}>
-                    <Col lg={6} className={styles.mainLogin}>
+                    <Col md={12} lg={6} className={styles.mainLogin}>
                         <LoginForm />
                     </Col>
-                    <Col lg={6} className={styles.carousel}>
+                    <Col md={12} lg={6} className={styles.carousel}>
                         <UncontrolledCarousel items={items}
                                                 indicators={false}
                                                 controls={false} />
