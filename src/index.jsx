@@ -9,6 +9,7 @@ import '../public/main.css';
 
 import HomepageIndex from './components/homepage/homeindex';
 import DashboardContainer from './components/dashboard/dashboard-container';
+import AcctResetContainer from './components/accountreset/accountreset-container';
 import store from './store';
 
 
@@ -17,6 +18,7 @@ const index = (
         <Router>
             <Switch>
                 <Route exact path='/' component={HomepageIndex} />
+                <Route exact path='/passreset/:token' component={(props) => <AcctResetContainer {...props} />} />
                 <Route exact path='/dashboard' component={DashboardContainer} />
             </Switch>
         </Router>

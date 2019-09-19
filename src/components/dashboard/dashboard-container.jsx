@@ -13,22 +13,14 @@ const DashboardContainer = () => {
 
     const [videoStatus, setVideoStatus] = useState(false);
     const [roomID, setRoomID] = useState(false);
-    const [friendslist, setFriendslist] = useState([
-        {'firstname': 'allen', 'lastname': 'kolakian', 'email': 'allen@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
-        {'firstname': 'david', 'lastname': 'duong', 'email': 'test@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
-        {'firstname': 'jin', 'lastname': 'kim', 'email': 'jin@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
-        {'firstname': 'will', 'lastname': 'lingamen', 'email': 'will@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
-        {'firstname': 'booki', 'lastname': 'Dalhmer', 'email': 'booki@gg.com', 'picture': 'https://en.gravatar.com/userimage/147142567/42d4c6928e4f936f32cd89731c57c694.jpeg'},
-    ]);
-
-    socket.on('friendslist', (data) => {
-        setFriendslist(data);
-    });
-
+    const [friendslist, setFriendslist] = useState([]);
+    const [currentCall, setCurrentCall] = useState('');
+    const [currentCallName, setCurrentCallName] = useState(false);
+    
     useEffect(() => {
         if (userInfo.token !== undefined) {
             let data = {'token': userInfo.token}
-            fetch('/dashboard/verifyuser', {
+            fetch('/dashboard/friendslist', {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -40,56 +32,155 @@ const DashboardContainer = () => {
             .then(res => {
                 res.json().then(res2 => {
                     if (res2.response !== 'valid token!') {
+                        localStorage.clear();
                         dispatch(setUserFirstname(undefined));
                         dispatch(setUserToken(undefined));
                         dispatch(setUserEmail(undefined));
+                    } else {
+                        const friends = res2.friendslist;
+                        setFriendslist(friends);
 
-                        localStorage.clear();
+                        // JOIN ROOMS WITH ADDED FRIENDS
+                        if (Array.isArray(friends)) {
+                            friends.map((user) => {
+                                socket.emit('join_room', user.id);
+                            });
+                        };
                     };
                 });
             });
         };
-
-        socket.on('test', (data) => {
-            console.log(data);
-        });
         
         socket.on('join_room', (data) => {
-            console.log(data);
+            if (data.action === 'joining') {
+            } else if (data.action === 'calling' && data.msg === 'success') {
+                setRoomID(data.tokbox);
+                if (data.callerEmail !== userInfo.email) {
+                    setVideoStatus('Receiving...');
+                    setCurrentCall(data.callerID);
+                    setCurrentCallName(data.caller);
+                } else if (data.callerEmail === userInfo.email) {
+                    setVideoStatus('Calling...');
+                    setCurrentCall(data.receiverID);
+                    setCurrentCallName('Calling...');
+                } else {
+                    setVideoStatus(false);
+                    setRoomID('');
+                    setCurrentCall('');
+                    setCurrentCallName(false);
+                };
+            } else if (data.action === 'accepting') {
+                setVideoStatus(true);
+            } else if (data.action === 'disconnecting') {
+                setRoomID('');
+                setVideoStatus(false);
+                setCurrentCall('');
+                setCurrentCallName(false);
+            } else {
+                setVideoStatus(false);
+                setRoomID('');
+                setCurrentCall('');
+                setCurrentCallName(false);
+            };
         });
 
         return () => {
             socket.removeAllListeners();  
         };
     }, []);
-
-    const handleCall = (userID) => {
-        const data = {'receiver': userID};
+    
+    const handleCall = (receiverID) => {
+        let data = {
+            'receiverID': receiverID,
+            'status': 'calling'
+        };
         setVideoStatus('Calling...');
-        console.log(data);
-        socket.emit('join_room', data);
+        socket.emit('join_call', data);
+    };
+
+    const handleAccept = () => {
+        socket.emit('accept_call', {'receiverID': currentCall});
+        setVideoStatus(true);
     };
 
     const handleHangup = () => {
+        socket.emit('disconnect_call', {'receiverID': currentCall});
         setVideoStatus(false);
+        setRoomID('');
+        setCurrentCall('');
     };
 
     const handleLogout = () => {
+        localStorage.clear();
         dispatch(setUserFirstname(undefined));
         dispatch(setUserToken(undefined));
         dispatch(setUserEmail(undefined));
+    };
 
-        localStorage.clear();
-    }
+    const addFriend = (userEmail) => {
+        let data = { 'addUser': userEmail, 'token': userInfo.token };
+        fetch('/dashboard/addfriend', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json()
+        .then(response => {
+            if (response.response === 'Add success') {
+                let newlist = [...friendslist, response.data];
+                setFriendslist(newlist);
+            } else if (response.response === 'Add fail') {
+                console.log('Failed to add user...');
+            } else {
+                console.log('A fatal error has occurred somewhere...');
+            };
+        }));
+    };
+
+    const removeFriend = (userEmail) => {
+        let data = { 'removeUser': userEmail, 'token': userInfo.token };
+        fetch('/dashboard/removefriend', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json()
+        .then(response => {
+            if (response.response === 'Remove success') {
+                let newlist = (friendslist).filter((user, index, arr) => {
+                    return user.email !== response.data;
+                });
+                setFriendslist(newlist);
+            } else if (response.response === 'Remove fail') {
+                console.log('Failed to remove user...');
+            } else {
+                console.log('A fatal error has occurred somewhere...');
+            };
+        }));
+    };
 
     if (userInfo.token !== undefined) {
         return <DashboardPresent
                     videoStatus={videoStatus}
                     handleCall={handleCall}
+                    handleAccept={handleAccept}
                     handleHangup={handleHangup}
                     roomID={roomID}
                     handleLogout={handleLogout}
-                        friendslist={friendslist} />
+                    currentCallName={currentCallName}
+                    videoStatus={videoStatus}
+                    currentCall={currentCall}
+                        friendslist={friendslist}
+                        addFriend={addFriend}
+                        removeFriend={removeFriend} />
     } else {
         return <Redirect to='/' />
     };

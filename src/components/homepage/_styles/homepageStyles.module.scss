@@ -508,11 +508,6 @@ $br: 4px;
             .inputW100 {
                 width: 100% !important;
             }
-
-            .forgot {
-                margin-top: -20px;
-                text-align: right;
-            }
         }
         .topRow > div {
             float: left;
@@ -520,6 +515,22 @@ $br: 4px;
             &:first-child {
                 width: 46%;
                 margin-right: 4%;
+            }
+        }
+
+        .forgot {
+            margin-top: -20px;
+            text-align: right;
+            
+            span {
+                text-decoration: none;
+                color : $main;
+                transition: .5s ease;
+                cursor: pointer;
+
+                &:hover {
+                    color: $main-dark;
+                }
             }
         }
     }

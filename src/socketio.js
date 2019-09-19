@@ -5,9 +5,9 @@ import socketIOClient from 'socket.io-client';
 //const userInfo = useSelector(state => (state.user));
 const localToken = (localStorage.getItem('token') ? localStorage.getItem('token') : '');
 
-const endpoint = "ws://localhost:3000";
-const transport = { transport : ['websocket'], query : { "token" : (localToken) } };
-let socket = socketIOClient(endpoint, transport);
+const endpoint = "/";
+const options = { transport : ['websocket'], query : { "token" : (localToken) }, secure: true };
+let socket = socketIOClient(endpoint, options);
 
 
 export default socket;

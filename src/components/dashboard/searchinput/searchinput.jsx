@@ -1,22 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import socket from '../../../socketio';
+import React, { useState, useRef } from 'react';
 
 import styles from '../_styles/dashboardStyles.module.scss';
 
 
-const SearchInput = () => {
+const SearchInput = (props) => {
     const [searchVal, setSearchVal] = useState('');
     const searchRef = useRef();
 
-    useEffect(() => {
-        socket.on('adduser', (data) => {
-            console.log(data);
-        });
-    }, []);
-
     const handleSubmit = () => {
         if (searchVal !== '' && (/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(searchVal))) {
-            socket.emit('adduser', searchVal);
+            props.addFriend(searchVal);
         };
 
         setSearchVal('');

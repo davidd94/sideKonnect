@@ -28,105 +28,172 @@ var server = http.createServer(app);
  * Adding socketio middleware and Setting up socketio namespace "connection" for new sockets
  */
 
-var io = require('socket.io')(server);
+var io = require('socket.io')(server, {
+  handlePreflightRequest: (req, res) => {
+    const headers = {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
+        "Access-Control-Allow-Credentials": true
+    };
+    res.writeHead(200, headers);
+    res.end();
+  }
+});
 
 io.on('connection', (socket) => {
   console.log('A user as connected !');
-  console.log(socket.handshake.query['token']);
   const currentUserToken = socket.handshake.query['token'];
   const secretKey = process.env.SECRET_KEY;
 
-  if (currentUserToken) {
-    try {
-      let currentUserInfo = jwt.verify(currentUserToken, secretKey);
-      let newFriendInfo = [];
+  // HELPER FUNCTIONS TO GENERATOR ROOM # AND NAME
+  const RoomGenerator = (inputID) => {
+    let callerInfo = jwt.verify(currentUserToken, secretKey);
+    let callerID = parseInt(callerInfo.id);
+    let receiverID = parseInt(inputID);
+    let roomID = callerID > receiverID ? (receiverID + '-' + callerID) : (callerID + '-' + receiverID);
 
-      models.buddy.findAll({
-        where : {
-          userId: currentUserInfo.id
-        },
-        raw: true,
-      }).map(user => {
-        let friend = {
-            'firstname': user.first_name,
-            'lastname': user.last_name,
-            'id': user.friend_id,
-            'picture': user.picture,
-            'email': user.email
-        };
-        newFriendInfo.push(friend);
-      }).then(() => {
-        io.emit('friendslist', newFriendInfo);
-      });
-    } catch (err) {
-      io.emit('friendslist', 'Unable to retreive friends list');
-    };
+    return roomID;
+  };
+  
+  const NameGenerator = () => {
+    let callerInfo = jwt.verify(currentUserToken, secretKey);
+    let callerName = callerInfo.firstname + ' ' + callerInfo.lastname;
+
+    return callerName;
   };
 
-  socket.on('join_room', (data) => {
-    console.log('TRYING TO JOIN A ROOM!!!!!!!!!!!!', data);
+  const EmailGenerator = () => {
+    let callerInfo = jwt.verify(currentUserToken, secretKey);
+    let callerEmail = callerInfo.email;
 
-    let receiverID = parseInt(data.receiver);
+    return callerEmail;
+  };
+
+  socket.on('join_room', (receiverID) => {
+    console.log('TRYING TO JOIN A ROOM!!!!!!!!!!!!', receiverID);
 
     try {
-      let callerID = parseInt((jwt.verify(currentUserToken, secretKey)).id);
-      let roomID = callerID > receiverID ? (receiverID + '-' + callerID) : (callerID + '-' + receiverID);
+      let callerName = NameGenerator();
+      let roomID = RoomGenerator(receiverID);
+      socket.join(roomID);
 
-      let secretRoomEncoded = base64url(currentUserToken);
-      let tokboxRoom = "https://tokbox.com/embed/embed/ot-embed.js?embedId=853df113-5f97-4ed9-9d0d-06ccae7a92a2&room=" + secretRoomEncoded + "&iframe=true"
-      console.log(roomID, tokboxRoom);
-      io.emit('join_room', 'room id is... ' + roomID);
+      let joinData = {
+        'action': 'joining',
+        'msg': 'success',
+        'join': (`${callerName} has joined the room ${roomID}`)
+      };
+
+      io.sockets.in(roomID).emit('join_room', joinData);
     } catch (err) {
-      io.emit('join_room', 'You must be logged to make this call..');
+      let joinData = {
+        'action': 'joining',
+        'msg': 'success',
+        'join': 'Unable to join rooms...'
+      };
+      io.emit('join_room', joinData);
     };
   });
 
-  socket.on('test', () => {
-    console.log('test run');
-    io.emit('test', 'testing !!!');
-  });
+  socket.on('join_call', (data) => {
+    console.log('TRYING TO MAKE A CALL !!!!!!');
 
-  socket.on('adduser', (data) => {
     try {
       let currentUserInfo = jwt.verify(currentUserToken, secretKey);
-      // FIND CURRENT USER'S INFO
-      models.users.findOne({
-        where : {
-          email: currentUserInfo.email
-        }
-      }).then(currentUser => {
-        if (currentUser) {
-          console.log(currentUser.email);
-          // IF CURRENT USER FOUND, FIND THE REQUESTED FRIEND TO BE ADDED
-          models.users.findOne({
-            where : {
-              email: data
-            }
-          }).then(friend => {
-            console.log(friend.email);
-            // IF REQUESTED FRIEND FOUND, ADD IF IT'S NOT THE CURRENT USER'S SELF
-            if (friend && (friend.email !== currentUser.email)) {
-              currentUser.createBuddy({
-                friend_id: friend.id,
-                first_name: friend.first_name,
-                last_name: friend.last_name,
-                email: friend.email,
-                picture: friend.picture
-              }).then(response => {
-                io.emit('adduser', data + ' added !');
-              });
-            } else if (friend.email === currentUser.email) {
-              io.emit('adduser', 'You cannot add yourself !');
-            } else {
-              io.emit('adduser', 'Unable to find ' + data);
-            };
-          });
-        } else {
-          io.emit('adduser', 'Current user unauthorized...');
-        };
-      });
+      let currentUserId = currentUserInfo.id;
+      let callerName = NameGenerator();
+      let callerEmail = EmailGenerator();
+      let roomID = RoomGenerator(data.receiverID);
+      let secretRoomEncoded = base64url(currentUserToken);
+      let tokboxRoom = "https://tokbox.com/embed/embed/ot-embed.js?embedId=853df113-5f97-4ed9-9d0d-06ccae7a92a2&room=" + secretRoomEncoded + "&iframe=true";
+
+      let callingData = {
+        'action': 'calling',
+        'msg': 'success',
+        'callerEmail': callerEmail,
+        'caller': callerName,
+        'callerID': currentUserId,
+        'receiverID': data.receiverID,
+        'tokbox': tokboxRoom,
+      };
+
+      io.sockets.in(roomID).emit('join_room', callingData);
     } catch (err) {
-      io.emit('adduser', 'Unauthorized...');
+      let callingData = {
+        'action': 'calling',
+        'msg': 'Unable to make that call...'
+      };
+      io.emit('join_room', callingData);
+    };
+  });
+
+  socket.on('accept_call', (data) => {
+    console.log('accepting call...');
+
+    try {
+      let roomID = RoomGenerator(data.receiverID);
+
+      let callingData = {
+        'action': 'accepting',
+        'msg': 'success',
+        'callerEmail': callerEmail,
+        'caller': callerName,
+        'receiverID': data.receiverID,
+        'tokbox': tokboxRoom,
+      };
+
+      io.sockets.in(roomID).emit('join_room', callingData);
+    } catch (err) {
+      let callingData = {
+        'action': 'accepting',
+        'msg': 'Unable to make that call...'
+      };
+      io.emit('join_room', callingData);
+    };
+  })
+
+  socket.on('disconnect_call', (data) => {
+    console.log('disconnecting call...');
+
+    try {
+      let roomID = RoomGenerator(data.receiverID);
+
+      let callingData = {
+        'action': 'disconnecting',
+        'msg': 'success',
+        'callerEmail': callerEmail,
+        'caller': callerName,
+        'receiverID': data.receiverID,
+        'tokbox': tokboxRoom,
+      };
+
+      io.sockets.in(roomID).emit('join_room', callingData);
+    } catch (err) {
+      let callingData = {
+        'action': 'disconnecting',
+        'msg': 'Unable to disconnect that call...'
+      };
+      io.emit('join_room', callingData);
+    };
+  });
+
+  socket.on('removeuser', (userID) => {
+    console.log('TRYING TO remove USER.... ' + userID);
+    try {
+      let currentUserInfo = jwt.verify(currentUserToken, secretKey);
+      // FIND FRIEND'S INFO
+      models.buddy.findOne({
+        where : {
+          friend_id: userID,
+          userId: currentUserInfo.id
+        }
+      }).then(user => {
+        if (user) {
+          // IF CURRENT USER FOUND, FIND THE REQUESTED FRIEND TO BE ADDED
+          console.log(user);
+        };
+      })
+    } catch (err) {
+      console.log('error removing user..');
     };
   });
 

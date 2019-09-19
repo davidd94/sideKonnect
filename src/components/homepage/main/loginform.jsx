@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { NavLink, Redirect } from 'react-router-dom';
 
 import styles from '../_styles/homepageStyles.module.scss';
@@ -7,6 +7,9 @@ import { setUserFirstname, setUserToken, setUserEmail } from '../../../actions/u
 
 
 const LoginForm = () => {
+    const dispatch = useDispatch();
+    const userInfo = useSelector(state => (state.user));
+
     const [tab, setTab] = useState('signup');
     const [firstname, setFirstname] = useState('');
     const [lastname, setLastname] = useState('');
@@ -20,15 +23,18 @@ const LoginForm = () => {
     const Eref = useRef();
     const Pref = useRef();
 
-    const [loginStatus, setLoginStatus] = useState(localStorage.getItem('token') ? 'Success' : '');
+    const [loginStatus, setLoginStatus] = useState(userInfo.token ? 'Success' : '');
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPass, setLoginPass] = useState('');
 
     const loginEmailRef = useRef();
     const loginPassRef = useRef();
 
-    const dispatch = useDispatch();
+    const [recoveryStatus, setRecoveryStatus] = useState('');
+    const [recoveryEmail, setRecoveryEmail] = useState('');
 
+    const recoveryEmailRef = useRef();
+    
     const handleLabelStyles = (inputType) => {
         if (inputType === 'firstname') {
             if (firstname.length > 0 && inputfocus === 'firstname') {
@@ -78,6 +84,14 @@ const LoginForm = () => {
             } else {
                 return {};
             }
+        } else if (inputType === 'recoveryEmail') {
+            if (recoveryEmail.length > 0 && inputfocus === 'recoveryEmail') {
+                return ([styles.active, styles.highlight]).join(' ');
+            } else if (recoveryEmail.length > 0 && inputfocus !== 'recoveryEmail') {
+                return styles.active;
+            } else {
+                return {};
+            }
         } else {
             return {}
         }
@@ -88,7 +102,7 @@ const LoginForm = () => {
             setSignupStatus('First name must be a minimum of 3 characters.');
         } else if (lastname.length < 3) {
             setSignupStatus('Last name must be a minimum of 3 characters.');
-        } else if ((/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email)) && email.length < 3) {
+        } else if (!(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email)) || email.length < 3) {
             setSignupStatus('You must enter a valid email address.');
         } else if (password.length < 5) {
             setSignupStatus('Your password must be a minimum of 5 characters.');
@@ -123,6 +137,11 @@ const LoginForm = () => {
                     Pref.current.value = '';
                 } else if (response.results === 'That email already exists. Please try another one.') {
                     setSignupStatus(response.results);
+                    setEmail('');
+                    setPassword('');
+
+                    Eref.current.value = '';
+                    Pref.current.value = '';
                 } else {
                     setSignupStatus('Failed to create an account. Please send us an email.');
                 };
@@ -159,27 +178,33 @@ const LoginForm = () => {
                 //setLoginStatus(response.results);
             } else {
                 setLoginStatus(response.results);
+                loginPassRef.current.value = '';
             };
         }));
     };
 
-    const verifyToken = () => {
-        let data = {'token': localStorage.getItem('token')};
-        
-        fetch('/verifytoken', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(res => res.json().then(response => {
-            console.log(response);
-        }));
+    const handleRecovery = () => {
+        if (!(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(recoveryEmail)) || recoveryEmail.length < 3) {
+            setRecoveryStatus('You must enter a valid email address.');
+        } else {
+            let data = {'email': recoveryEmail};
+            fetch('/acctrecovery', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json()
+            .then(response => {
+                recoveryEmailRef.current.value = '';
+                setRecoveryEmail('');
+                setRecoveryStatus(response.response);
+            }));
+        };
     };
-    
 
     if (loginStatus === 'Success') {
         return <Redirect to='/dashboard' />
@@ -194,8 +219,6 @@ const LoginForm = () => {
                 <div className={styles.tabContent}>
                     <div className={tab === 'signup' ? ([styles.signup, styles.tabActive]).join(' ') : styles.signup}>
                         <h1>Sign Up For Free</h1>
-                        <NavLink to='/dashboard'>TO DASHBOARD</NavLink>
-                        <span onClick={verifyToken}>VERIFY TOKEN</span>
                         <p className={styles.loginAlerts}>{signupStatus}</p>
                         <div className={styles.topRow}>
                             <div className={styles.fieldWrap}>
@@ -223,7 +246,11 @@ const LoginForm = () => {
                                 <label className={handleLabelStyles('password')}>
                                     Set A Password<span className={styles.req}>*</span>
                                 </label>
-                                <input ref={Pref} name="password" type="password" required autoComplete="off" onChange={(e) => {setPassword(e.currentTarget.value)}} onFocus={() => setInputfocus('password')} onBlur={() => setInputfocus('')} />
+                                <input ref={Pref} name="password" type="password" required autoComplete="off"
+                                            onChange={(e) => {setPassword(e.currentTarget.value)}}
+                                            onFocus={() => setInputfocus('password')}
+                                            onBlur={() => setInputfocus('')}
+                                            onKeyUp={(e) => {if (e.which === 13) {handleRegistration()}}} />
                             </div>
 
                             <button type="submit" className={([styles.button, styles.buttonBlock]).join(' ')} onClick={handleRegistration}>Get Started</button>
@@ -253,9 +280,30 @@ const LoginForm = () => {
                                                 onKeyUp={(e) => {if (e.which === 13) {handleLogin()}}} />
                             </div>
 
-                            <p className={styles.forgot}><a href="">Forgot Password ?</a></p>
+                            <p className={styles.forgot}><span onClick={() => setTab('acctrecovery')}>Forgot Password ?</span></p>
 
                             <button type="submit" className={([styles.button, styles.buttonBlock]).join(' ')} onClick={handleLogin}>Log In</button>
+                            
+                        </div>
+                    </div>
+
+                    <div className={tab === 'acctrecovery' ? ([styles.login, styles.tabActive]).join(' ') : styles.login}>
+                        <p className={styles.forgot} style={{textAlign: 'left'}}><span onClick={() => {setTab('login'); setRecoveryEmail(''); setRecoveryStatus(''); recoveryEmailRef.current.value = '';}}>Back to Login</span></p>
+                        <h1 className={styles.loginHeader}>Account Recovery</h1>
+                        <p className={styles.loginAlerts}>{recoveryStatus}</p>
+                        <div className={styles.topRow}>
+                            <div className={([styles.fieldWrap, styles.inputW100]).join(' ')}>
+                                <label className={handleLabelStyles('recoveryEmail')}>
+                                    Email Address<span className={styles.req}>*</span>
+                                </label>
+                                <input ref={recoveryEmailRef} type="text" required autoComplete="off"
+                                            onChange={(e) => {setRecoveryEmail(e.currentTarget.value)}}
+                                            onFocus={() => setInputfocus('recoveryEmail')}
+                                            onBlur={() => setInputfocus('')}
+                                            onKeyUp={(e) => {if (e.which === 13) {handleRecovery()}}} />
+                            </div>
+
+                            <button type="submit" className={([styles.button, styles.buttonBlock]).join(' ')} onClick={handleRecovery}>Submit</button>
                             
                         </div>
                     </div>

@@ -8,6 +8,9 @@ let home = require('../controllers/home');
 router.get('/', home.get_landing);
 router.post('/register', home.submit_user);
 router.post('/login', home.login_user);
+router.post('/acctrecovery', home.acct_recovery);
+router.get('/passreset/:token', home.reset_pass);
+router.post('/passchange', home.change_pass);
 router.post('/verifytoken', home.verify_token);
 
 router.use(bodyParser.urlencoded({ extended: false }));
