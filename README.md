@@ -15,9 +15,6 @@ Adding/Removing Friends with SocketIO
 Accepting/Receiving Calls with SocketIO and Tokbox API <br>
 https://i.imgur.com/iSz8oGW.gif
 
-Live Video Example ! <br>
-https://i.imgur.com/iSz8oGW.gif
-
 ## Technologies/frameworks
 <b>Built with</b>
 - NodeJS / Express
