@@ -9,19 +9,21 @@ module.exports = {
     "port": 5432
   },
   "test": {
-    "username": "root",
-    "password": null,
-    "database": "database_test",
+    "username": "postgres",
+    "password": "mouse312",
+    "database": "test",
     "host": "127.0.0.1",
-    "dialect": "mysql",
-    "operatorsAliases": false
+    "dialect": "postgres",
+    "operatorsAliases": false,
+    "port": 5432
   },
   "production": {
-    "username": "root",
-    "password": null,
-    "database": "database_production",
+    "username": "postgres",
+    "password": "mouse312",
+    "database": "sideKonnect",
     "host": "127.0.0.1",
-    "dialect": "mysql",
-    "operatorsAliases": false
+    "dialect": "postgres",
+    "operatorsAliases": false,
+    "port": 5432
   }
 }

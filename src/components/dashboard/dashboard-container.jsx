@@ -111,6 +111,9 @@ const DashboardContainer = () => {
     };
 
     const handleLogout = () => {
+	if (currentCall) {
+		socket.emit('disconnect_call', {'receiverID': currentCall});
+	};
         localStorage.clear();
         dispatch(setUserFirstname(undefined));
         dispatch(setUserToken(undefined));

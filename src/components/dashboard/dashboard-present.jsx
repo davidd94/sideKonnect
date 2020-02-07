@@ -15,7 +15,7 @@ const DashboardPresent = (props) => {
                         <img width="50" height="50" src={user.picture ? user.picture : 'https://i.imgur.com/DG9UZrS.png'} />
                         <div className={styles.info}>
                             <div className={styles.user}>{user.firstname} {user.lastname}
-                                <i className="fas fa-user-minus" onClick={() => {props.removeFriend(user.email)}} />
+                                <i className="fas fa-user-minus" style={props.currentCall ? {display: 'none'} : {}} onClick={() => {props.removeFriend(user.email)}} />
                             </div>
                             <div className={styles.comms}>
                                 <i className="fas fa-phone" onClick={() => {props.handleCall(user.id)}} style={(props.videoStatus && props.currentCall === user.id) ? {display: 'none'} : {} }/>

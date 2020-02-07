@@ -4,12 +4,13 @@
  * Module dependencies.
  */
 
-var app = require('../app');
+var app = require('../sideKonnect');
 var debug = require('debug')('sidekonnect:server');
 var http = require('http');
 let models = require('../models');
 const jwt = require('jsonwebtoken');
 const base64url = require('base64url');
+//require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 /**
  * Get port from environment and store in Express.
@@ -41,9 +42,9 @@ var io = require('socket.io')(server, {
 });
 
 io.on('connection', (socket) => {
-  console.log('A user as connected !');
   const currentUserToken = socket.handshake.query['token'];
   const secretKey = process.env.SECRET_KEY;
+  var currentCallerID;
 
   // HELPER FUNCTIONS TO GENERATOR ROOM # AND NAME
   const RoomGenerator = (inputID) => {
@@ -70,8 +71,6 @@ io.on('connection', (socket) => {
   };
 
   socket.on('join_room', (receiverID) => {
-    console.log('TRYING TO JOIN A ROOM!!!!!!!!!!!!', receiverID);
-
     try {
       let callerName = NameGenerator();
       let roomID = RoomGenerator(receiverID);
@@ -85,18 +84,11 @@ io.on('connection', (socket) => {
 
       io.sockets.in(roomID).emit('join_room', joinData);
     } catch (err) {
-      let joinData = {
-        'action': 'joining',
-        'msg': 'success',
-        'join': 'Unable to join rooms...'
-      };
-      io.emit('join_room', joinData);
+      
     };
   });
 
   socket.on('join_call', (data) => {
-    console.log('TRYING TO MAKE A CALL !!!!!!');
-
     try {
       let currentUserInfo = jwt.verify(currentUserToken, secretKey);
       let currentUserId = currentUserInfo.id;
@@ -115,20 +107,16 @@ io.on('connection', (socket) => {
         'receiverID': data.receiverID,
         'tokbox': tokboxRoom,
       };
+	
+      currentCallerID = data.receiverID;
 
       io.sockets.in(roomID).emit('join_room', callingData);
     } catch (err) {
-      let callingData = {
-        'action': 'calling',
-        'msg': 'Unable to make that call...'
-      };
-      io.emit('join_room', callingData);
+      
     };
   });
 
   socket.on('accept_call', (data) => {
-    console.log('accepting call...');
-
     try {
       let roomID = RoomGenerator(data.receiverID);
 
@@ -143,19 +131,17 @@ io.on('connection', (socket) => {
 
       io.sockets.in(roomID).emit('join_room', callingData);
     } catch (err) {
-      let callingData = {
-        'action': 'accepting',
-        'msg': 'Unable to make that call...'
-      };
-      io.emit('join_room', callingData);
+      
     };
   })
 
   socket.on('disconnect_call', (data) => {
-    console.log('disconnecting call...');
-
     try {
       let roomID = RoomGenerator(data.receiverID);
+      let callerName = NameGenerator();
+      let callerEmail = EmailGenerator();
+      let secretRoomEncoded = base64url(currentUserToken);
+      let tokboxRoom = "https://tokbox.com/embed/embed/ot-embed.js?embedId=853df113-5f97-4ed9-9d0d-06ccae7a92a2&room=" + secretRoomEncoded + "&iframe=true";
 
       let callingData = {
         'action': 'disconnecting',
@@ -165,19 +151,17 @@ io.on('connection', (socket) => {
         'receiverID': data.receiverID,
         'tokbox': tokboxRoom,
       };
+      console.log(currentCallerID);
+      currentCallerID = '';
+      console.log(currentCallerID);
 
       io.sockets.in(roomID).emit('join_room', callingData);
     } catch (err) {
-      let callingData = {
-        'action': 'disconnecting',
-        'msg': 'Unable to disconnect that call...'
-      };
-      io.emit('join_room', callingData);
+      
     };
   });
 
   socket.on('removeuser', (userID) => {
-    console.log('TRYING TO remove USER.... ' + userID);
     try {
       let currentUserInfo = jwt.verify(currentUserToken, secretKey);
       // FIND FRIEND'S INFO
@@ -189,7 +173,7 @@ io.on('connection', (socket) => {
       }).then(user => {
         if (user) {
           // IF CURRENT USER FOUND, FIND THE REQUESTED FRIEND TO BE ADDED
-          console.log(user);
+          //console.log(user);
         };
       })
     } catch (err) {
@@ -198,7 +182,31 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('A user disconnected..........');
+    console.log(currentCallerID);
+    if (currentCallerID) {
+    	try {
+      let roomID = RoomGenerator(currentCallerID);
+      let callerName = NameGenerator();
+      let callerEmail = EmailGenerator();
+      let secretRoomEncoded = base64url(currentUserToken);
+      let tokboxRoom = "https://tokbox.com/embed/embed/ot-embed.js?embedId=853df113-5f97-4ed9-9d0d-06ccae7a92a2&room=" + secretRoomEncoded + "&iframe=true";
+
+      let callingData = {
+        'action': 'disconnecting',
+        'msg': 'success',
+        'callerEmail': callerEmail,
+        'caller': callerName,
+        'receiverID': currentCallerID,
+        'tokbox': tokboxRoom,
+      };
+
+      currentCallerID = '';
+
+      io.sockets.in(roomID).emit('join_room', callingData);
+    } catch (err) {
+      
+    };
+    }
   });
 });
 
@@ -210,7 +218,6 @@ return models.sequelize.sync().then(result => {
   server.listen(port);
   server.on('error', onError);
   server.on('listening', onListening);
-  console.log('Listening on port: ' + port);
 });
 
 /**

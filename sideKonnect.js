@@ -7,7 +7,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var dashboardRouter = require('./routes/dashboard');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 var app = express();
 
