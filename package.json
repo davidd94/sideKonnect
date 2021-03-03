@@ -22,7 +22,7 @@
     "morgan": "~1.9.1",
     "nodemailer": "^6.3.0",
     "pg": "^7.12.1",
-    "pug": "2.0.0-beta11",
+    "pug": "3.0.1",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
     "react-perfect-scrollbar": "^1.5.3",
